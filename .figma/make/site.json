@@ -1,0 +1,11 @@
+{
+  "title": "atlas",
+  "description": "Showcase your web development services with a portfolio site that offers customizable website packages for individuals and businesses, featuring modern design and easy ordering.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

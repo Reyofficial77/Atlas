@@ -1,0 +1,195 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap");
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --bg: #f8fbfd;
+  --surface: #ffffff;
+  --text: #10202b;
+  --muted: #60717d;
+  --line: #d9e3e9;
+  --line-strong: #10202b;
+  --accent: #5dc5f2;
+  --accent-soft: #e6f6fd;
+  --accent-soft-strong: #bce9fb;
+  color-scheme: light;
+  font-family: "Manrope", sans-serif;
+  scroll-behavior: smooth;
+}
+
+.dark {
+  --bg: #0b1115;
+  --surface: #10191f;
+  --text: #eaf6fb;
+  --muted: #91a5b0;
+  --line: #26343c;
+  --line-strong: #c9e3ef;
+  --accent: #5dc5f2;
+  --accent-soft: #102d3a;
+  --accent-soft-strong: #174b61;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  font-weight: 500;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+a,
+label,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+a {
+  transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease;
+}
+
+.font-display {
+  font-family: "Space Grotesk", sans-serif;
+}
+
+.page {
+  width: min(1160px, calc(100% - 2.5rem));
+  margin-inline: auto;
+}
+
+.nav-link {
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.nav-link:hover {
+  color: var(--accent);
+}
+
+.button-primary,
+.button-secondary {
+  display: inline-flex;
+  min-height: 2.875rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  border: 2px solid var(--line-strong);
+  padding: 0.75rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 800;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.button-primary {
+  background: var(--accent);
+  color: #071319;
+}
+
+.button-primary:hover {
+  background: var(--text);
+  color: var(--bg);
+}
+
+.button-secondary {
+  border-color: var(--line-strong);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.button-secondary:hover {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+.icon-button {
+  display: grid;
+  width: 2.875rem;
+  height: 2.875rem;
+  place-items: center;
+  border: 2px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.icon-button:hover {
+  background: var(--accent);
+  color: #071319;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  border: 2px solid var(--line-strong);
+  background: var(--accent-soft);
+  padding: 0.5rem 0.75rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  border: 2px solid var(--line-strong);
+  border-radius: 0;
+  outline: none;
+  background: var(--bg);
+  color: var(--text);
+  padding: 0.8rem 0.9rem;
+  font-size: 0.875rem;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--muted);
+  opacity: 0.75;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+textarea {
+  resize: vertical;
+}
+
+@media (max-width: 640px) {
+  .page {
+    width: min(100% - 1.5rem, 1160px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+  }
+}
