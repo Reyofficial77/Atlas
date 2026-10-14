@@ -167,6 +167,32 @@ export default function App() {
     localStorage.setItem("atlas-contact", JSON.stringify(contact));
   }, [contact]);
 
+  useEffect(() => {
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduceMotion || !("IntersectionObserver" in window)) return;
+
+    const targets = document.querySelectorAll<HTMLElement>(
+      "#services article, #work article, .package-card, #order form, #order > div > div:first-child"
+    );
+    targets.forEach((target) => target.classList.add("reveal-on-scroll"));
+    document.documentElement.classList.add("motion-ready");
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-visible");
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: "0px 0px -35px 0px" });
+    targets.forEach((target) => observer.observe(target));
+
+    return () => {
+      observer.disconnect();
+      document.documentElement.classList.remove("motion-ready");
+    };
+  }, []);
+
   const choosePackage = (name: string) => {
     setSelectedPackage(name);
     document.getElementById("order")?.scrollIntoView({ behavior: "smooth" });
@@ -179,62 +205,64 @@ export default function App() {
     setIsSubmitting(true);
     setOrderError("");
 
-    // Open synchronously from the user click so popup blockers do not stop WhatsApp.
+    // Reserve a tab synchronously to avoid mobile popup blockers.
     const whatsappTab = window.open("about:blank", "_blank");
+    let orderId = "Belum tersimpan otomatis";
+    let orderDate = new Intl.DateTimeFormat("id-ID", { dateStyle: "long", timeStyle: "short" }).format(new Date());
+    let saved = false;
 
     try {
       const response = await fetch("/api/orders", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({
           name: contact.name,
           phone: contact.phone,
           email: contact.email,
           packageName: selectedPackage,
-          notes,
+          notes: notes.trim(),
           payment,
           website: "",
         }),
       });
 
-      const result: {
-        ok?: boolean;
-        error?: string;
-        order?: { id?: string; createdAt?: string };
-      } = await response.json();
-
+      const result = await response.json().catch(() => ({})) as {
+        ok?: boolean; error?: string; order?: { id?: string; createdAt?: string };
+      };
       if (!response.ok || !result.ok || !result.order?.id) {
-        throw new Error(result.error || "Pesanan gagal disimpan. Silakan coba lagi.");
+        throw new Error(result.error || `Server gagal menyimpan pesanan (HTTP ${response.status}).`);
       }
-
-      const orderDate = new Intl.DateTimeFormat("id-ID", {
-        dateStyle: "long",
-        timeStyle: "short",
-      }).format(result.order.createdAt ? new Date(result.order.createdAt) : new Date());
-      const message = [
-        "Halo ATLAS, saya ingin memesan website.",
-        "",
-        `ID Pesanan: ${result.order.id}`,
-        `Paket Website: ${selectedPackage}`,
-        `Nama Lengkap: ${contact.name}`,
-        `No. HP: ${contact.phone}`,
-        `Email: ${contact.email}`,
-        `Catatan: ${notes}`,
-        `Metode Pembayaran: ${payment}`,
-        `Tanggal Pesan: ${orderDate}`,
-      ].join("\n");
-      const whatsappUrl = `https://wa.me/${ADMIN_WHATSAPP.replace(/\D/g, "")}?text=${encodeURIComponent(message)}`;
-
-      if (whatsappTab) {
-        whatsappTab.location.href = whatsappUrl;
-      } else {
-        window.location.href = whatsappUrl;
-      }
+      orderId = result.order.id;
+      orderDate = new Intl.DateTimeFormat("id-ID", { dateStyle: "long", timeStyle: "short" })
+        .format(result.order.createdAt ? new Date(result.order.createdAt) : new Date());
+      saved = true;
     } catch (error) {
-      if (whatsappTab && !whatsappTab.closed) whatsappTab.close();
-      setOrderError(error instanceof Error ? error.message : "Terjadi kesalahan. Silakan coba lagi.");
+      const detail = error instanceof Error ? error.message : "Server tidak dapat dijangkau.";
+      setOrderError(`Pesanan belum tersimpan otomatis (${detail}), tetapi kamu tetap bisa melanjutkan melalui WhatsApp.`);
     } finally {
       setIsSubmitting(false);
+    }
+
+    const message = [
+      "Halo Admin Atlas! Saya ingin memesan *Jasa Pembuatan Website* Nih!",
+      "",
+      "Detail Pesanan :",
+      "",
+      `Nama Lengkap : ${contact.name}`,
+      `Email : ${contact.email}`,
+      `Paket Website : ${selectedPackage}`,
+      `Metode Pembayaran : ${payment}`,
+      `Tanggal Memesan : ${orderDate}`,
+      "",
+      `Deskripsi Website : ${notes.trim() || "Belum diisi"}`,
+    ].join("\n");
+    const number = ADMIN_WHATSAPP.replace(/\D/g, "");
+    const whatsappUrl = `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
+    if (whatsappTab && !whatsappTab.closed) {
+      whatsappTab.location.href = whatsappUrl;
+    } else {
+      // If the browser blocks a new tab, continue in the current tab.
+      window.location.assign(whatsappUrl);
     }
   };
 
@@ -290,7 +318,7 @@ export default function App() {
         )}
       </header>
 
-      <section className="page grid min-h-[calc(100vh-4.5rem)] items-center gap-14 py-20 lg:grid-cols-[1.08fr_.92fr]" id="top">
+      <section className="hero-section page grid min-h-[calc(100svh-4.5rem)] items-center gap-14 py-16 lg:grid-cols-[1.08fr_.92fr]" id="top">
         <div>
           <div className="eyebrow"><span className="size-2 bg-[var(--accent)]" /> Jasa pembuatan website</div>
           <h1 className="mt-7 max-w-3xl font-display text-5xl font-extrabold leading-[1.05] tracking-[-0.045em] sm:text-6xl lg:text-7xl">
@@ -312,7 +340,7 @@ export default function App() {
           </div>
         </div>
 
-        <div className="relative mx-auto w-full max-w-xl">
+        <div className="hero-art relative mx-auto w-full max-w-xl">
           <div className="absolute -left-5 -top-5 h-28 w-28 border-l-4 border-t-4 border-[var(--accent)]" />
           <div className="relative border-2 border-[var(--line-strong)] bg-[var(--surface)]">
             <div className="flex items-center gap-2 border-b-2 border-[var(--line-strong)] px-5 py-4">
@@ -387,7 +415,7 @@ export default function App() {
           <SectionHeading centered eyebrow="Paket website" title="Mulai kecil, tumbuh lebih besar." text="Pilih paket terbaik untuk kebutuhanmu. Semua paket dibuat dengan perhatian yang sama." />
           <div className="mt-14 grid items-stretch gap-5 lg:grid-cols-3">
             {packages.map((item) => (
-              <article className={`relative flex flex-col border-2 p-7 sm:p-9 ${item.popular ? "-rotate-1 border-[var(--line-strong)] bg-[var(--accent-soft)]" : "border-[var(--line-strong)] bg-[var(--bg)]"}`} key={item.name}>
+              <article className={`package-card relative flex flex-col border-2 p-6 sm:p-9 ${item.popular ? "border-[var(--line-strong)] bg-[var(--accent-soft)]" : "border-[var(--line-strong)] bg-[var(--bg)]"}`} key={item.name}>
                 {item.popular && <span className="absolute right-5 top-0 -translate-y-1/2 rotate-2 border-2 border-[var(--line-strong)] bg-[var(--accent)] px-3 py-1.5 text-xs font-extrabold uppercase text-slate-950">Paling diminati</span>}
                 <p className="text-sm font-bold uppercase tracking-[.16em] text-[var(--accent)]">{item.name}</p>
                 <h3 className="mt-5 font-display text-4xl font-extrabold tracking-tight">{item.price}</h3>
