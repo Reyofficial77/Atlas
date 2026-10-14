@@ -227,10 +227,31 @@ export default function App() {
       });
 
       const result = await response.json().catch(() => ({})) as {
-        ok?: boolean; error?: string; order?: { id?: string; createdAt?: string };
+        ok?: boolean;
+        error?: unknown;
+        message?: unknown;
+        order?: { id?: string; createdAt?: string };
+      };
+      const getErrorText = (value: unknown): string => {
+        if (typeof value === "string" && value.trim()) return value.trim();
+        if (value && typeof value === "object") {
+          const data = value as Record<string, unknown>;
+          for (const key of ["message", "error", "detail", "hint", "code"]) {
+            const candidate = data[key];
+            if (typeof candidate === "string" && candidate.trim()) return candidate.trim();
+          }
+          try {
+            return JSON.stringify(value);
+          } catch {
+            return "Respons error tidak dapat dibaca.";
+          }
+        }
+        return "";
       };
       if (!response.ok || !result.ok || !result.order?.id) {
-        throw new Error(result.error || `Server gagal menyimpan pesanan (HTTP ${response.status}).`);
+        const detail = getErrorText(result.error) || getErrorText(result.message)
+          || `Server gagal menyimpan pesanan (HTTP ${response.status}).`;
+        throw new Error(detail);
       }
       orderId = result.order.id;
       orderDate = new Intl.DateTimeFormat("id-ID", { dateStyle: "long", timeStyle: "short" })
